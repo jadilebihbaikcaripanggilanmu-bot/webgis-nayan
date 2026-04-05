@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>WebGIS Padukuhan Nayan</title>
+
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+  />
+
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --primary: #184e77;
+      --primary-2: #1d6fa5;
+      --accent: #f59e0b;
+      --danger: #d9485f;
+      --green: #8ecf8a;
+      --green-line: #4b8f46;
+      --building: #f2b8b5;
+      --building-line: #cf5d56;
+      --road: #f04e30;
+      --shadow: 0 10px 30px rgba(0,0,0,.10);
+      --radius: 18px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .hero {
+      position: relative;
+      padding: 28px 24px 22px;
+      color: white;
+      background:
+        linear-gradient(135deg, rgba(24,78,119,.96), rgba(29,111,165,.90)),
+        url('https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1600&q=60') center/cover;
+      box-shadow: var(--shadow);
+    }
+
+    .hero-inner {
+      max-width: 1280px;
+      margin: 0 auto;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.14);
+      backdrop-filter: blur(6px);
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: .3px;
+      margin-bottom: 12px;
+    }
+
+    .hero h1 {
+      margin: 0;
+      font-size: 38px;
+      line-height: 1.1;
+      font-weight: 800;
+    }
+
+    .hero p {
+      max-width: 900px;
+      margin: 12px 0 0;
+      font-size: 16px;
+      line-height: 1.7;
+      color: rgba(255,255,255,.92);
+    }
+
+    .main {
+      max-width: 1280px;
+      margin: 22px auto;
+      padding: 0 18px 22px;
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 18px;
+    }
+
+    .panel {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 18px;
+    }
+
+    .card h2, .card h3 {
+      margin: 0 0 10px;
+      color: var(--primary);
+    }
+
+    .card p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.7;
+      font-size: 14px;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 10px;
+    }
+
+    .stat {
+      padding: 14px;
+      border-radius: 14px;
+      background: linear-gradient(180deg, #f8fbff, #eef6ff);
+      border: 1px solid #e3edf8;
+    }
+
+    .stat .label {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .stat .value {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--primary);
+    }
+
+    .legend-list, .info-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    .legend-item, .info-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      color: var(--text);
+    }
+
+    .swatch {
+      width: 18px;
+      height: 18px;
+      border-radius: 5px;
+      flex-shrink: 0;
+      border: 1px solid rgba(0,0,0,.15);
+    }
+
+    .dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .btn-wrap {
+      display: grid;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    button.map-btn {
+      width: 100%;
+      border: 0;
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: .2s ease;
+      font-size: 14px;
+    }
+
+    .primary-btn {
+      background: var(--primary);
+      color: white;
+    }
+
+    .primary-btn:hover {
+      background: var(--primary-2);
+    }
+
+    .accent-btn {
+      background: #fff5db;
+      color: #925d00;
+    }
+
+    .accent-btn:hover {
+      background: #ffeab0;
+    }
+
+    .map-card {
+      background: var(--card);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      position: relative;
+      min-height: 760px;
+    }
+
+    .map-topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 18px;
+      border-bottom: 1px solid #e8eef5;
+      background: #fcfdff;
+    }
+
+    .map-title {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .map-title strong {
+      font-size: 18px;
+      color: var(--primary);
+    }
+
+    .map-title span {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    #map {
+      width: 100%;
+      height: 700px;
+    }
+
+    .leaflet-popup-content-wrapper {
+      border-radius: 14px;
+    }
+
+    .popup-title {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--primary);
+      margin-bottom: 8px;
+    }
+
+    .popup-row {
+      font-size: 13px;
+      margin-bottom: 4px;
+      color: #374151;
+    }
+
+    .popup-badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: #fff1f2;
+      color: #be123c;
+      font-size: 12px;
+      font-weight: 700;
+      margin-top: 8px;
+    }
+
+    .leaflet-control-layers {
+      border-radius: 12px !important;
+      box-shadow: var(--shadow) !important;
+      border: none !important;
+      padding: 8px !important;
+    }
+
+    .custom-legend {
+      background: rgba(255,255,255,.96);
+      padding: 12px 14px;
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+      line-height: 1.6;
+      min-width: 170px;
+    }
+
+    .custom-legend h4 {
+      margin: 0 0 8px;
+      color: var(--primary);
+      font-size: 14px;
+    }
+
+    .footer-note {
+      margin-top: 14px;
+      font-size: 12px;
+      color: #94a3b8;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 980px) {
+      .main {
+        grid-template-columns: 1fr;
+      }
+
+      #map {
+        height: 560px;
+      }
+
+      .hero h1 {
+        font-size: 30px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <section class="hero">
+    <div class="hero-inner">
+      <div class="badge">
+        <i class="fa-solid fa-map-location-dot"></i> WebGIS Kawasan Permukiman
+      </div>
+      <h1>WebGIS Padukuhan Nayan</h1>
+      <p>
+        WebGIS ini menampilkan sebaran bangunan, sawah, jaringan jalan, dan titik centroid
+        bangunan pada area kajian di Padukuhan Nayan, Maguwoharjo, Depok, Sleman.
+        Peta ini disusun sebagai media visualisasi spasial sekaligus dasar untuk pengembangan
+        analisis lanjutan seperti identifikasi lokasi, keterkaitan antarobjek, dan analisis rute.
+      </p>
+    </div>
+  </section>
+
+  <main class="main">
+    <aside class="panel">
+      <div class="card">
+        <h2>Pendahuluan</h2>
+        <p>
+          Padukuhan Nayan merupakan bagian dari kawasan permukiman di wilayah Maguwoharjo,
+          Kecamatan Depok, Kabupaten Sleman. Dalam WebGIS ini, objek utama yang divisualisasikan
+          meliputi bangunan, area sawah, dan jaringan jalan untuk memperlihatkan pola ruang
+          kawasan secara sederhana namun informatif. Salah satu bangunan juga diberi penanda
+          khusus sebagai lokasi kos.
+        </p>
+      </div>
+
+      <div class="card">
+        <h3>Ringkasan Data</h3>
+        <div class="stats">
+          <div class="stat">
+            <div class="label">Bangunan</div>
+            <div class="value" id="stat-bangunan">-</div>
+          </div>
+          <div class="stat">
+            <div class="label">Sawah</div>
+            <div class="value" id="stat-sawah">-</div>
+          </div>
+          <div class="stat">
+            <div class="label">Centroid</div>
+            <div class="value" id="stat-centroid">-</div>
+          </div>
+          <div class="stat">
+            <div class="label">Jalan</div>
+            <div class="value" id="stat-jalan">-</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Informasi Layer</h3>
+        <div class="info-list">
+          <div class="info-item">
+            <i class="fa-solid fa-house"></i>
+            <span>Bangunan direpresentasikan sebagai polygon.</span>
+          </div>
+          <div class="info-item">
+            <i class="fa-solid fa-seedling"></i>
+            <span>Sawah ditampilkan sebagai penggunaan lahan nonbangunan.</span>
+          </div>
+          <div class="info-item">
+            <i class="fa-solid fa-road"></i>
+            <span>Jalan divisualisasikan sebagai jaringan akses utama.</span>
+          </div>
+          <div class="info-item">
+            <i class="fa-solid fa-location-dot"></i>
+            <span>Centroid bangunan dipakai sebagai representasi titik objek.</span>
+          </div>
+        </div>
+
+        <div class="btn-wrap">
+          <button class="map-btn primary-btn" id="btn-full">
+            <i class="fa-solid fa-expand"></i> Tampilkan Seluruh Area Kajian
+          </button>
+          <button class="map-btn accent-btn" id="btn-kos">
+            <i class="fa-solid fa-house-user"></i> Fokus ke Lokasi Kos Saya
+          </button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Legenda</h3>
+        <div class="legend-list">
+          <div class="legend-item">
+            <span class="swatch" style="background:#f2b8b5;border-color:#cf5d56;"></span>
+            <span>Bangunan</span>
+          </div>
+          <div class="legend-item">
+            <span class="swatch" style="background:#cfeabb;border-color:#4b8f46;"></span>
+            <span>Sawah</span>
+          </div>
+          <div class="legend-item">
+            <span class="swatch" style="background:#f04e30;"></span>
+            <span>Jalan</span>
+          </div>
+          <div class="legend-item">
+            <span class="dot" style="background:#2563eb;"></span>
+            <span>Centroid bangunan</span>
+          </div>
+          <div class="legend-item">
+            <span class="dot" style="background:#d61f45;"></span>
+            <span>Kos saya</span>
+          </div>
+        </div>
+        <div class="footer-note">
+          Data spasial yang digunakan merupakan hasil digitasi dan pengolahan yang disiapkan
+          untuk kebutuhan visualisasi WebGIS area kajian.
+        </div>
+      </div>
+    </aside>
+
+    <section class="map-card">
+      <div class="map-topbar">
+        <div class="map-title">
+          <strong>Peta Interaktif</strong>
+          <span>Padukuhan Nayan, Maguwoharjo, Depok, Sleman</span>
+        </div>
+      </div>
+      <div id="map"></div>
+    </section>
+  </main>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    const map = L.map('map', {
+      zoomControl: true
+    }).setView([-7.7745, 110.4145], 17);
+
+    const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    const cartoLight = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; OpenStreetMap &copy; CARTO'
+    });
+
+    let bangunanLayer, sawahLayer, jalanLayer, centroidLayer;
+    let allLayersGroup = L.featureGroup().addTo(map);
+    let kosMarkerRef = null;
+    let kosPolygonRef = null;
+
+    function popupBangunan(feature) {
+      const props = feature.properties || {};
+      const status = props.status ? `<div class="popup-badge">${props.status}</div>` : '';
+      return `
+        <div class="popup-title">Informasi Bangunan</div>
+        <div class="popup-row"><b>ID Bangunan:</b> ${props.id_bgn || '-'}</div>
+        <div class="popup-row"><b>Keterangan:</b> ${props.keterangan || props.ket || '-'}</div>
+        ${status}
+      `;
+    }
+
+    function popupSawah(feature) {
+      const props = feature.properties || {};
+      return `
+        <div class="popup-title">Informasi Sawah</div>
+        <div class="popup-row"><b>ID Sawah:</b> ${props.id_sawah || '-'}</div>
+        <div class="popup-row"><b>Keterangan:</b> ${props.keterangan || props.ket || '-'}</div>
+      `;
+    }
+
+    function popupJalan(feature) {
+      const props = feature.properties || {};
+      return `
+        <div class="popup-title">Informasi Jalan</div>
+        <div class="popup-row"><b>ID Jalan:</b> ${props.id_jln || '-'}</div>
+        <div class="popup-row"><b>Keterangan:</b> ${props.keterangan || props.ket || '-'}</div>
+      `;
+    }
+
+    function styleBangunan(feature) {
+      const status = feature.properties?.status || '';
+      if (status === 'Kos Saya') {
+        return {
+          color: '#d61f45',
+          weight: 2.6,
+          fillColor: '#ffd6df',
+          fillOpacity: 0.95
+        };
+      }
+      return {
+        color: '#cf5d56',
+        weight: 1.2,
+        fillColor: '#f2b8b5',
+        fillOpacity: 0.82
+      };
+    }
+
+    function styleSawah() {
+      return {
+        color: '#4b8f46',
+        weight: 1.1,
+        fillColor: '#cfeabb',
+        fillOpacity: 0.75
+      };
+    }
+
+    function styleJalan() {
+      return {
+        color: '#f04e30',
+        weight: 3.2,
+        opacity: 1
+      };
+    }
+
+    function centroidStyle(feature) {
+      const status = feature.properties?.status || '';
+      if (status === 'Kos Saya') {
+        return {
+          radius: 7,
+          color: '#ffffff',
+          weight: 2,
+          fillColor: '#d61f45',
+          fillOpacity: 1
+        };
+      }
+      return {
+        radius: 5,
+        color: '#ffffff',
+        weight: 1,
+        fillColor: '#2563eb',
+        fillOpacity: 0.95
+      };
+    }
+
+    function updateStat(id, value) {
+      document.getElementById(id).textContent = value;
+    }
+
+    Promise.all([
+      fetch('data/Bangunan1.geojson').then(r => r.json()),
+      fetch('data/sawah.geojson').then(r => r.json()),
+      fetch('data/jalanan.geojson').then(r => r.json()),
+      fetch('data/centroid_bgn.geojson').then(r => r.json())
+    ]).then(([bangunanData, sawahData, jalanData, centroidData]) => {
+      bangunanLayer = L.geoJSON(bangunanData, {
+        style: styleBangunan,
+        onEachFeature: function(feature, layer) {
+          layer.bindPopup(popupBangunan(feature));
+
+          if (feature.properties?.status === 'Kos Saya') {
+            kosPolygonRef = layer;
+          }
+        }
+      });
+
+      sawahLayer = L.geoJSON(sawahData, {
+        style: styleSawah,
+        onEachFeature: function(feature, layer) {
+          layer.bindPopup(popupSawah(feature));
+        }
+      });
+
+      jalanLayer = L.geoJSON(jalanData, {
+        style: styleJalan,
+        onEachFeature: function(feature, layer) {
+          layer.bindPopup(popupJalan(feature));
+        }
+      });
+
+      centroidLayer = L.geoJSON(centroidData, {
+        pointToLayer: function(feature, latlng) {
+          const marker = L.circleMarker(latlng, centroidStyle(feature));
+
+          if (feature.properties?.status === 'Kos Saya') {
+            kosMarkerRef = marker;
+          }
+
+          return marker;
+        },
+        onEachFeature: function(feature, layer) {
+          const props = feature.properties || {};
+          const status = props.status ? `<div class="popup-badge">${props.status}</div>` : '';
+          layer.bindPopup(`
+            <div class="popup-title">Centroid Bangunan</div>
+            <div class="popup-row"><b>ID Bangunan:</b> ${props.id_bgn || '-'}</div>
+            <div class="popup-row"><b>Keterangan:</b> ${props.keterangan || props.ket || '-'}</div>
+            ${status}
+          `);
+        }
+      });
+
+      bangunanLayer.addTo(allLayersGroup);
+      sawahLayer.addTo(allLayersGroup);
+      jalanLayer.addTo(allLayersGroup);
+      centroidLayer.addTo(allLayersGroup);
+
+      map.fitBounds(allLayersGroup.getBounds(), { padding: [30, 30] });
+
+      const baseMaps = {
+        "OpenStreetMap": osm,
+        "Carto Light": cartoLight
+      };
+
+      const overlayMaps = {
+        "Bangunan": bangunanLayer,
+        "Sawah": sawahLayer,
+        "Jalan": jalanLayer,
+        "Centroid Bangunan": centroidLayer
+      };
+
+      L.control.layers(baseMaps, overlayMaps, {
+        collapsed: false
+      }).addTo(map);
+
+      updateStat('stat-bangunan', bangunanData.features.length);
+      updateStat('stat-sawah', sawahData.features.length);
+      updateStat('stat-jalan', jalanData.features.length);
+      updateStat('stat-centroid', centroidData.features.length);
+    }).catch(err => {
+      console.error('Gagal memuat data GeoJSON:', err);
+      alert('Ada data GeoJSON yang belum terbaca. Cek nama file dan lokasi folder data.');
+    });
+
+    document.getElementById('btn-full').addEventListener('click', function() {
+      if (allLayersGroup.getLayers().length > 0) {
+        map.fitBounds(allLayersGroup.getBounds(), { padding: [30, 30] });
+      }
+    });
+
+    document.getElementById('btn-kos').addEventListener('click', function() {
+      if (kosPolygonRef) {
+        map.fitBounds(kosPolygonRef.getBounds(), { padding: [80, 80] });
+        kosPolygonRef.openPopup();
+      } else if (kosMarkerRef) {
+        map.setView(kosMarkerRef.getLatLng(), 19);
+        kosMarkerRef.openPopup();
+      } else {
+        alert('Lokasi kos belum terdeteksi. Pastikan field status pada bangunan/centroid sudah berisi "Kos Saya".');
+      }
+    });
+
+    const legend = L.control({ position: 'bottomright' });
+    legend.onAdd = function() {
+      const div = L.DomUtil.create('div', 'custom-legend');
+      div.innerHTML = `
+        <h4>Legenda Peta</h4>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+          <span class="swatch" style="background:#f2b8b5;border-color:#cf5d56;"></span> Bangunan
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+          <span class="swatch" style="background:#cfeabb;border-color:#4b8f46;"></span> Sawah
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+          <span class="swatch" style="background:#f04e30;"></span> Jalan
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+          <span class="dot" style="background:#2563eb;"></span> Centroid
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="dot" style="background:#d61f45;"></span> Kos Saya
+        </div>
+      `;
+      return div;
+    };
+    legend.addTo(map);
+  </script>
+</body>
+</html>
