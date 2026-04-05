@@ -1,2 +1,10 @@
 # webgis-nayan
 Disajikan untuk tugas SIG INTERNET - UPN "Veteran" Yogyakarta
+Christopher Daniel Simbolon
+NIM 117230045
+
+PADUKUHAN NAYAN
+KELURAHAN MAGUWOHARJO
+KECAMATAN DEPOK
+KABUPATEN SLEMAN
+DI YOGYAKARTA
